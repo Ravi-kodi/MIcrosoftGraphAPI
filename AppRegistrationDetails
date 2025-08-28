@@ -1,0 +1,274 @@
+openapi: 3.0.1
+info:
+  title: Microsoft Graph API – App Registration & Service Principal
+  description: OpenAPI specification for managing Microsoft Graph app registrations and service principals.
+  version: 1.0.0
+
+servers:
+  - url: https://graph.microsoft.com/v1.0
+    description: Microsoft Graph API (v1.0)
+
+security:
+  - azureOAuth: []
+
+components:
+  securitySchemes:
+    azureOAuth:
+      type: oauth2
+      flows:
+        clientCredentials:
+          tokenUrl: https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token
+          scopes:
+            https://graph.microsoft.com/.default: Access Microsoft Graph
+
+  schemas:
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+        appId:
+          type: string
+        displayName:
+          type: string
+        signInAudience:
+          type: string
+        identifierUris:
+          type: array
+          items:
+            type: string
+        passwordCredentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/PasswordCredential'
+        keyCredentials:
+          type: array
+          items:
+            $ref: '#/components/schemas/KeyCredential'
+        requiredResourceAccess:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequiredResourceAccess'
+      required:
+        - id
+        - appId
+        - displayName
+
+    PasswordCredential:
+      type: object
+      properties:
+        keyId:
+          type: string
+        displayName:
+          type: string
+        endDateTime:
+          type: string
+          format: date-time
+
+    KeyCredential:
+      type: object
+      properties:
+        keyId:
+          type: string
+        startDateTime:
+          type: string
+          format: date-time
+        endDateTime:
+          type: string
+          format: date-time
+        usage:
+          type: string
+
+    RequiredResourceAccess:
+      type: object
+      properties:
+        resourceAppId:
+          type: string
+        resourceAccess:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+
+    ServicePrincipal:
+      type: object
+      properties:
+        id:
+          type: string
+        appId:
+          type: string
+        displayName:
+          type: string
+        servicePrincipalType:
+          type: string
+        accountEnabled:
+          type: boolean
+      required:
+        - id
+        - appId
+
+    GenericError:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+paths:
+  /applications:
+    get:
+      summary: List all app registrations or search by name
+      parameters:
+        - name: $search
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filter applications by displayName (e.g., $search="displayName:MyApp")
+        - name: $select
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Comma-separated list of fields to return
+      responses:
+        '200':
+          description: A list of Application objects
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Application'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+
+    post:
+      summary: Create a new app registration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Application'
+      responses:
+        '201':
+          description: Application created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+
+  /applications/{appId}:
+    get:
+      summary: Retrieve an app registration by object ID
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Application object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Application'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+
+    delete:
+      summary: Delete an app registration
+      parameters:
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Application deleted successfully
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+
+  /servicePrincipals:
+    get:
+      summary: List service principals
+      parameters:
+        - name: $select
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Fields to include in response
+      responses:
+        '200':
+          description: ServicePrincipal objects list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServicePrincipal'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
+
+  /servicePrincipals/{spId}:
+    get:
+      summary: Retrieve a service principal by object ID
+      parameters:
+        - name: spId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ServicePrincipal object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServicePrincipal'
+        default:
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenericError'
